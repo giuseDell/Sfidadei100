@@ -28,7 +28,12 @@ def load_data():
 def save_series(data, esercizio, ripetizioni):
     df = load_data()
     oggi = datetime.date.today()
-    serie_numero = len(df[(df['Data'].dt.date == oggi) & (df['Esercizio'] == esercizio)]) + 1
+
+    if not df.empty and 'Data' in df.columns:
+        serie_numero = len(df[(df['Data'].dt.date == oggi) & (df['Esercizio'] == esercizio)]) + 1
+    else:
+        serie_numero = 1
+
     new_row = [oggi.strftime('%Y-%m-%d'), esercizio, serie_numero, ripetizioni, '']
     worksheet.append_row(new_row)
 

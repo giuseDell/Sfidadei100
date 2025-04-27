@@ -131,6 +131,9 @@ with tabs[2]:
 
     st.divider()
 
+    if 'aggiunto' not in st.session_state:
+        st.session_state['aggiunto'] = False
+
     with st.form("aggiungi_serie"):
         esercizio = st.selectbox("Seleziona esercizio", ["Pushup", "Squat"])
         ripetizioni = st.number_input("Numero di ripetizioni", min_value=1, step=1)
@@ -139,7 +142,12 @@ with tabs[2]:
         if submitted:
             save_series(oggi, esercizio, ripetizioni)
             st.success(f"Serie aggiunta: {ripetizioni} {esercizio}")
-            st.experimental_rerun()
+            st.session_state['aggiunto'] = True
+            st.experimental_set_query_params(refresh=str(time.time()))
+
+    if st.session_state.get('aggiunto', False):
+        st.session_state['aggiunto'] = False
+        st.experimental_rerun()
 
     st.subheader("Serie di oggi")
     if not df_today.empty:

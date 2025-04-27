@@ -143,11 +143,11 @@ with tabs[2]:
             save_series(oggi, esercizio, ripetizioni)
             st.success(f"Serie aggiunta: {ripetizioni} {esercizio}")
             st.session_state['aggiunto'] = True
-            st.experimental_set_query_params(refresh=str(time.time()))
+            st.rerun()
 
     if st.session_state.get('aggiunto', False):
         st.session_state['aggiunto'] = False
-        st.experimental_rerun()
+        st.rerun()
 
     st.subheader("Serie di oggi")
     if not df_today.empty:

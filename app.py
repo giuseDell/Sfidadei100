@@ -50,9 +50,10 @@ def save_time_direct(tempo_minuti):
     worksheet.append_row([oggi.strftime('%Y-%m-%d'), '', '', '', tempo_minuti])
 
 # --- UI Streamlit ---
-st.set_page_config(page_title="Sfida dei 100", page_icon="🏋️", layout="wide")
+st.set_page_config(page_title="Sfida dei 100", page_icon="🏋️‍♂️", layout="wide")
 
-st.title("🏋️ Sfida dei 100 - Pushup & Squat")
+st.image("logo_sfida100.png", width=150)
+st.title("🏋️‍♂️ Sfida dei 100 - Pushup & Squat")
 
 # Tabs
 tabs = st.tabs(["Progressi", "Timer", "Allenamento Serie"])

@@ -61,20 +61,36 @@ tabs = st.tabs(["Progressi", "Timer", "Allenamento Serie"])
 with tabs[0]:
     st.header("🗓️ I tuoi progressi")
     df = load_data()
+
     start_date = datetime.date(2025, 4, 27)
     days = [start_date + datetime.timedelta(days=i) for i in range(90)]
 
     completati = df['Data'].dt.date.unique() if not df.empty else []
 
     selected_day = None
-    cols = st.columns(10)
+
+    cols = st.columns(10)  # 10 colonne
+
     for i, day in enumerate(days):
         col = cols[i % 10]
-        if day in completati:
-            if col.button(day.strftime('%d/%m')):
-                selected_day = day
-        else:
-            col.markdown(f"<div style='text-align: center; color: grey;'>{day.strftime('%d/%m')}</div>", unsafe_allow_html=True)
+        colore = "#00cc44" if day in completati else "#222222"  # Verde se completato, Nero se no
+        button_label = day.strftime('%d/%m')
+        if col.button(button_label, key=f"giorno_{i}"):
+            selected_day = day
+
+        # Applico stile al bottone
+        col.markdown(f"""
+            <style>
+            div[data-testid="stButton"][key="giorno_{i}"] > button {{
+                background-color: {colore};
+                color: white;
+                height: 50px;
+                width: 70px;
+                border-radius: 10px;
+                margin: 2px;
+            }}
+            </style>
+        """, unsafe_allow_html=True)
 
     if selected_day:
         giorno_df = df[df['Data'].dt.date == selected_day]

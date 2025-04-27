@@ -73,16 +73,19 @@ with tabs[0]:
 
     for i, day in enumerate(days):
         col = cols[i % 10]
+
         if day in completati:
             giorno_df = df[df['Data'].dt.date == day]
             pushup_tot = giorno_df[giorno_df['Esercizio'] == 'Pushup']['Ripetizioni'].sum()
             squat_tot = giorno_df[giorno_df['Esercizio'] == 'Squat']['Ripetizioni'].sum()
-        if pushup_tot >= 100 and squat_tot >= 100:
-            colore = "#00cc44"  # Verde completato
+
+            if pushup_tot >= 100 and squat_tot >= 100:
+                colore = "#00cc44"  # Verde completato
+            else:
+                colore = "#ffcc00"  # Giallo se parzialmente completato
         else:
-            colore = "#ffcc00"  # Giallo se parzialmente completato
-else:
-    colore = "#222222"  # Nero se mai fatto
+            colore = "#222222"  # Nero se mai fatto
+
         button_label = day.strftime('%d/%m')
         if col.button(button_label, key=f"giorno_{i}"):
             selected_day = day
@@ -124,7 +127,6 @@ else:
                 st.table(squat_df)
             else:
                 st.info("Nessuna serie di Squat.")
-                
 # --- Timer ---
 with tabs[1]:
     st.header("⏱️ Timer di Allenamento")

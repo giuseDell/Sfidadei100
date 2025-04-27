@@ -6,6 +6,18 @@ import json
 import datetime
 import time
 
+
+st.subheader("🛠️ Stato connessione Google Sheets")
+
+try:
+    df = load_data()
+    if df.empty:
+        st.warning("Il file è collegato correttamente, ma non ci sono ancora dati!")
+    else:
+        st.success("Google Sheets collegato e dati caricati correttamente!")
+except Exception as e:
+    st.error(f"Errore di connessione: {e}")
+    
 # --- Connessione a Google Sheets ---
 creds = json.loads(st.secrets["GOOGLE_SHEETS_CREDENTIALS"])
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]

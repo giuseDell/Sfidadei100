@@ -67,30 +67,33 @@ with tabs[0]:
 
     completati = df['Data'].dt.date.unique() if not df.empty else []
 
+    # --- PRIMA creiamo tutti i bottoni per selezionare ---
     selected_day = None
-
     cols = st.columns(10)  # 10 colonne
 
     for i, day in enumerate(days):
         col = cols[i % 10]
 
-        if day in completati:
-            giorno_df = df[df['Data'].dt.date == day]
-            pushup_tot = giorno_df[giorno_df['Esercizio'] == 'Pushup']['Ripetizioni'].sum()
-            squat_tot = giorno_df[giorno_df['Esercizio'] == 'Squat']['Ripetizioni'].sum()
-
-            if pushup_tot >= 100 and squat_tot >= 100:
-                colore = "#00cc44"  # Verde completato
-            else:
-                colore = "#ffcc00"  # Giallo se parzialmente completato
-        else:
-            colore = "#222222"  # Nero se mai fatto
-
         button_label = day.strftime('%d/%m')
         if col.button(button_label, key=f"giorno_{i}"):
             selected_day = day
 
-        # Applico stile al bottone
+    # --- DOPO assegniamo colori ai bottoni ---
+    for i, day in enumerate(days):
+        colore = "#222222"  # Nero base
+        if day in completati:
+            giorno_df = df[df['Data'].dt.date == day]
+            pushup_tot = giorno_df[giorno_df['Esercizio'] == 'Pushup']['Ripetizioni'].sum()
+            squat_tot = giorno_df[giorno_df['Esercizio'] == 'Squat']['Ripetizioni'].sum()
+            if pushup_tot >= 100 and squat_tot >= 100:
+                colore = "#00cc44"  # Verde completato
+            else:
+                colore = "#ffcc00"  # Giallo incompleto
+
+        if selected_day == day:
+            colore = "#3399ff"  # Azzurro se selezionato
+
+        col = cols[i % 10]
         col.markdown(f"""
             <style>
             div[data-testid="stButton"][key="giorno_{i}"] > button {{
@@ -104,6 +107,7 @@ with tabs[0]:
             </style>
         """, unsafe_allow_html=True)
 
+    # --- Mostra Dettaglio se giorno selezionato ---
     if selected_day:
         giorno_df = df[df['Data'].dt.date == selected_day]
         tempo = giorno_df['Tempo Totale'].dropna().values
@@ -127,6 +131,7 @@ with tabs[0]:
                 st.table(squat_df)
             else:
                 st.info("Nessuna serie di Squat.")
+                
 # --- Timer ---
 with tabs[1]:
     st.header("⏱️ Timer di Allenamento")

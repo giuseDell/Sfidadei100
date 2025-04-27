@@ -5,7 +5,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import datetime
 import time
-    
+
 # --- Connessione a Google Sheets ---
 creds = json.loads(st.secrets["GOOGLE_SHEETS_CREDENTIALS"])
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
@@ -21,21 +21,21 @@ worksheet = spreadsheet.worksheet('DB')
 def load_data():
     records = worksheet.get_all_records()
     df = pd.DataFrame(records)
-    if not df.empty:
-        df['Data'] = pd.to_datetime(df['Data'])
+    if not df.empty and 'Data' in df.columns:
+        df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
     return df
 
 def save_series(data, esercizio, ripetizioni):
     df = load_data()
     oggi = datetime.date.today()
-    serie_numero = len(df[(df['Data'] == pd.to_datetime(oggi)) & (df['Esercizio'] == esercizio)]) + 1
+    serie_numero = len(df[(df['Data'].dt.date == oggi) & (df['Esercizio'] == esercizio)]) + 1
     new_row = [oggi.strftime('%Y-%m-%d'), esercizio, serie_numero, ripetizioni, '']
     worksheet.append_row(new_row)
 
 def save_time(data, tempo_totale_minuti):
     df = load_data()
     oggi = datetime.date.today()
-    righe_oggi = df[df['Data'] == pd.to_datetime(oggi)]
+    righe_oggi = df[df['Data'].dt.date == oggi]
     if not righe_oggi.empty and pd.isna(righe_oggi.iloc[0]['Tempo Totale']):
         cella = worksheet.find(str(oggi.strftime('%Y-%m-%d')))
         worksheet.update_cell(cella.row, 5, f"{tempo_totale_minuti}")
@@ -45,9 +45,8 @@ st.set_page_config(page_title="Sfida dei 100", page_icon="🏋️", layout="wide
 
 st.title("🏋️ Sfida dei 100 - Pushup & Squat")
 
-# --- Stato connessione google sheets ---
+# Stato connessione Google Sheets
 st.subheader("🛠️ Stato connessione Google Sheets")
-
 try:
     df = load_data()
     if df.empty:
@@ -56,6 +55,7 @@ try:
         st.success("Google Sheets collegato e dati caricati correttamente!")
 except Exception as e:
     st.error(f"Errore di connessione: {e}")
+
 # Tabs
 tabs = st.tabs(["Progressi", "Timer", "Allenamento Serie"])
 
@@ -109,13 +109,20 @@ with tabs[2]:
 
     oggi = datetime.date.today()
     df = load_data()
-    df_today = df[df['Data'] == pd.to_datetime(oggi)]
+
+    if not df.empty and 'Data' in df.columns:
+        df_today = df[df['Data'].dt.date == oggi]
+    else:
+        df_today = pd.DataFrame(columns=['Data', 'Esercizio', 'Serie', 'Ripetizioni', 'Tempo Totale'])
 
     pushup_tot = df_today[df_today['Esercizio'] == 'Pushup']['Ripetizioni'].sum()
     squat_tot = df_today[df_today['Esercizio'] == 'Squat']['Ripetizioni'].sum()
 
-    st.metric("Pushup di oggi", f"{pushup_tot}/100")
-    st.metric("Squat di oggi", f"{squat_tot}/100")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Pushup di oggi", f"{pushup_tot}/100")
+    with col2:
+        st.metric("Squat di oggi", f"{squat_tot}/100")
 
     st.divider()
 
@@ -129,6 +136,9 @@ with tabs[2]:
             st.success(f"Serie aggiunta: {ripetizioni} {esercizio}")
             st.experimental_rerun()
 
+    st.subheader("Serie di oggi")
+    if not df_today.empty:
+        st.table(df_today[['Esercizio', 'Serie', 'Ripetizioni']].sort_values(by=['Esercizio', 'Serie']))
+
     if pushup_tot >= 100 and squat_tot >= 100:
         st.success("🎉 Allenamento completato oggi! Ottimo lavoro!")
-

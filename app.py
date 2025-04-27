@@ -5,18 +5,6 @@ from oauth2client.service_account import ServiceAccountCredentials
 import json
 import datetime
 import time
-
-
-st.subheader("🛠️ Stato connessione Google Sheets")
-
-try:
-    df = load_data()
-    if df.empty:
-        st.warning("Il file è collegato correttamente, ma non ci sono ancora dati!")
-    else:
-        st.success("Google Sheets collegato e dati caricati correttamente!")
-except Exception as e:
-    st.error(f"Errore di connessione: {e}")
     
 # --- Connessione a Google Sheets ---
 creds = json.loads(st.secrets["GOOGLE_SHEETS_CREDENTIALS"])
@@ -57,6 +45,17 @@ st.set_page_config(page_title="Sfida dei 100", page_icon="🏋️", layout="wide
 
 st.title("🏋️ Sfida dei 100 - Pushup & Squat")
 
+# --- Stato connessione google sheets ---
+st.subheader("🛠️ Stato connessione Google Sheets")
+
+try:
+    df = load_data()
+    if df.empty:
+        st.warning("Il file è collegato correttamente, ma non ci sono ancora dati!")
+    else:
+        st.success("Google Sheets collegato e dati caricati correttamente!")
+except Exception as e:
+    st.error(f"Errore di connessione: {e}")
 # Tabs
 tabs = st.tabs(["Progressi", "Timer", "Allenamento Serie"])
 

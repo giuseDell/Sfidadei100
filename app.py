@@ -37,13 +37,17 @@ def save_series(data, esercizio, ripetizioni):
     new_row = [oggi.strftime('%Y-%m-%d'), esercizio, serie_numero, ripetizioni, '']
     worksheet.append_row(new_row)
 
-def save_time(data, tempo_totale_minuti):
-    df = load_data()
+def save_time_direct(tempo_minuti):
     oggi = datetime.date.today()
-    righe_oggi = df[df['Data'].dt.date == oggi]
-    if not righe_oggi.empty and pd.isna(righe_oggi.iloc[0]['Tempo Totale']):
-        cella = worksheet.find(str(oggi.strftime('%Y-%m-%d')))
-        worksheet.update_cell(cella.row, 5, f"{tempo_totale_minuti}")
+    records = worksheet.get_all_records()
+    df = pd.DataFrame(records)
+    if not df.empty and 'Data' in df.columns:
+        df['Data'] = pd.to_datetime(df['Data'], errors='coerce')
+        if oggi in df['Data'].dt.date.values:
+            idx = df[df['Data'].dt.date == oggi].index[0] + 2  # +2 per header
+            worksheet.update_cell(idx, 5, tempo_minuti)
+            return
+    worksheet.append_row([oggi.strftime('%Y-%m-%d'), '', '', '', tempo_minuti])
 
 # --- UI Streamlit ---
 st.set_page_config(page_title="Sfida dei 100", page_icon="🏋️", layout="wide")
@@ -57,15 +61,23 @@ tabs = st.tabs(["Progressi", "Timer", "Allenamento Serie"])
 with tabs[0]:
     st.header("🗓️ I tuoi progressi")
     df = load_data()
-    if df.empty:
-        st.info("Nessun dato ancora registrato.")
-    else:
-        df['Data_only'] = df['Data'].dt.date
-        giorni = sorted(df['Data_only'].unique())
+    start_date = datetime.date(2025, 4, 27)
+    days = [start_date + datetime.timedelta(days=i) for i in range(90)]
 
-        selected_day = st.selectbox("Scegli un giorno completato", giorni[::-1])
+    completati = df['Data'].dt.date.unique() if not df.empty else []
 
-        giorno_df = df[df['Data_only'] == selected_day]
+    selected_day = None
+    cols = st.columns(10)
+    for i, day in enumerate(days):
+        col = cols[i % 10]
+        if day in completati:
+            if col.button(day.strftime('%d/%m')):
+                selected_day = day
+        else:
+            col.markdown(f"<div style='text-align: center; color: grey;'>{day.strftime('%d/%m')}</div>", unsafe_allow_html=True)
+
+    if selected_day:
+        giorno_df = df[df['Data'].dt.date == selected_day]
         tempo = giorno_df['Tempo Totale'].dropna().values
         tempo = tempo[0] if len(tempo) > 0 else 'Non registrato'
 
@@ -79,15 +91,15 @@ with tabs[0]:
             if not pushup_df.empty:
                 st.table(pushup_df)
             else:
-                st.info("Nessuna serie di Pushup registrata.")
+                st.info("Nessuna serie di Pushup.")
         with col2:
             st.subheader("Squat")
             squat_df = giorno_df[giorno_df['Esercizio'] == 'Squat'][['Serie', 'Ripetizioni']]
             if not squat_df.empty:
                 st.table(squat_df)
             else:
-                st.info("Nessuna serie di Squat registrata.")
-
+                st.info("Nessuna serie di Squat.")
+                
 # --- Timer ---
 with tabs[1]:
     st.header("⏱️ Timer di Allenamento")
@@ -110,7 +122,7 @@ with tabs[1]:
                 elapsed_time = int(time.time() - st.session_state.start_time)
                 minutes = elapsed_time // 60
                 seconds = elapsed_time % 60
-                save_time(datetime.date.today(), minutes)
+                save_time_direct(minutes)
                 st.success(f"Tempo totale salvato: {minutes:02d}:{seconds:02d}")
 
     if st.session_state.running:
@@ -120,7 +132,7 @@ with tabs[1]:
         st.metric(label="Tempo Allenamento", value=f"{minutes:02d}:{seconds:02d}")
         time.sleep(1)
         st.rerun()
-
+        
 # --- Allenamento Serie ---
 with tabs[2]:
     st.header("🏆 Allenamento di oggi")
